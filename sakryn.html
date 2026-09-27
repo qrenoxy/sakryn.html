@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sakryn Obfuscator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black: #080808;
+  --white: #f0efe8;
+  --off-white: #c8c7be;
+  --gray-900: #111111;
+  --gray-800: #161616;
+  --gray-700: #1e1e1e;
+  --gray-600: #282828;
+  --gray-500: #383838;
+  --gray-400: #555555;
+  --gray-300: #777777;
+  --gray-200: #999999;
+  --font-sans: 'Space Grotesk', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* NOISE TEXTURE OVERLAY */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--black); }
+::-webkit-scrollbar-thumb { background: var(--gray-600); border-radius: 2px; }
+
+/* ───── NAV ───── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 60px;
+  background: rgba(8,8,8,0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--gray-600);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.nav-logo img {
+  width: 28px; height: 28px;
+  object-fit: contain;
+  border-radius: 6px;
+  opacity: 0.9;
+}
+
+.nav-logo-text {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: 0.12em;
+}
+
+.nav-center {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.nav-center a {
+  color: var(--gray-300);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  transition: color 0.2s;
+}
+
+.nav-center a:hover { color: var(--white); }
+
+.nav-right { display: flex; align-items: center; gap: 12px; }
+
+.nav-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--gray-600);
+  padding: 7px 16px;
+  border-radius: 100px;
+  font-size: 12px;
+  color: var(--gray-200);
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+  letter-spacing: 0.02em;
+}
+
+.nav-pill:hover { border-color: var(--gray-400); color: var(--white); }
+
+.nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--white);
+  color: var(--black);
+  padding: 7px 18px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.nav-cta:hover { background: var(--off-white); transform: scale(1.02); }
+
+/* ───── HERO ───── */
+.hero {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 100px 24px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* grid lines background */
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 20%, transparent 80%);
+}
+
+/* radial glow */
+.hero-glow {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-inner { position: relative; z-index: 2; max-width: 720px; }
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--gray-600);
+  background: rgba(255,255,255,0.03);
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--gray-300);
+  letter-spacing: 0.1em;
+  margin-bottom: 48px;
+  backdrop-filter: blur(8px);
+}
+
+.badge-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px #4ade80, 0 0 12px rgba(74,222,128,0.4);
+  animation: blink 2.4s ease-in-out infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.hero-logo-wrap {
+  margin-bottom: 36px;
+}
+
+.hero-logo {
+  width: 72px; height: 72px;
+  object-fit: contain;
+  border-radius: 18px;
+  border: 1px solid var(--gray-600);
+  padding: 8px;
+  background: var(--gray-900);
+}
+
+.hero h1 {
+  font-family: var(--font-mono);
+  font-size: clamp(56px, 10vw, 96px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+
+.hero-h1-sub {
+  font-family: var(--font-mono);
+  font-size: clamp(13px, 2vw, 17px);
+  color: var(--gray-400);
+  letter-spacing: 0.18em;
+  margin-bottom: 32px;
+  font-weight: 400;
+}
+
+.hero-desc {
+  font-size: 17px;
+  color: var(--gray-300);
+  max-width: 440px;
+  margin: 0 auto 48px;
+  line-height: 1.75;
+  font-weight: 300;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-white {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--white);
+  color: var(--black);
+  padding: 13px 28px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.btn-white:hover { background: var(--off-white); transform: translateY(-2px); }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--gray-600);
+  color: var(--gray-300);
+  padding: 13px 28px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s, transform 0.15s;
+}
+
+.btn-ghost:hover { border-color: var(--gray-400); color: var(--white); transform: translateY(-2px); }
+
+.hero-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gray-600) 20%, var(--gray-600) 80%, transparent);
+}
+
+/* scroll hint */
+.scroll-hint {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 2;
+}
+
+.scroll-mouse {
+  width: 20px; height: 32px;
+  border: 1px solid var(--gray-500);
+  border-radius: 10px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.scroll-wheel {
+  width: 2px; height: 5px;
+  background: var(--gray-400);
+  border-radius: 1px;
+  animation: scrollDown 1.8s ease-in-out infinite;
+}
+
+@keyframes scrollDown {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(10px); }
+}
+
+/* ───── MARQUEE STRIP ───── */
+.marquee-strip {
+  border-top: 1px solid var(--gray-700);
+  border-bottom: 1px solid var(--gray-700);
+  background: var(--gray-900);
+  padding: 12px 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.marquee-track {
+  display: flex;
+  gap: 0;
+  animation: marquee 20s linear infinite;
+  width: max-content;
+}
+
+.marquee-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 40px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gray-400);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.marquee-sep {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--gray-600);
+  flex-shrink: 0;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ───── STATS ───── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid var(--gray-700);
+}
+
+.stat {
+  padding: 64px 48px;
+  border-right: 1px solid var(--gray-700);
+  position: relative;
+}
+
+.stat:last-child { border-right: none; }
+
+.stat::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+}
+
+.stat-n {
+  font-family: var(--font-mono);
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--gray-400);
+  letter-spacing: 0.04em;
+}
+
+/* ───── SECTION SHARED ───── */
+.section-wrap {
+  padding: 128px 64px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--gray-400);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.eyebrow::after {
+  content: '';
+  height: 1px;
+  width: 40px;
+  background: var(--gray-600);
+}
+
+.section-h {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 500;
+  color: var(--white);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 72px;
+  max-width: 520px;
+}
+
+.section-h em {
+  font-style: normal;
+  color: var(--gray-300);
+}
+
+/* ───── FEATURES ───── */
+#features { border-top: 1px solid var(--gray-700); }
+
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--gray-700);
+  border: 1px solid var(--gray-700);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.feat {
+  background: var(--black);
+  padding: 40px 36px 44px;
+  position: relative;
+  transition: background 0.25s;
+}
+
+.feat::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 20% 0%, rgba(255,255,255,0.03) 0%, transparent 60%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.feat:hover { background: var(--gray-900); }
+.feat:hover::after { opacity: 1; }
+
+.feat-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--gray-600);
+  letter-spacing: 0.1em;
+  margin-bottom: 28px;
+}
+
+.feat-icon {
+  margin-bottom: 20px;
+  color: var(--gray-400);
+}
+
+.feat-icon svg {
+  width: 22px; height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.feat h3 {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--white);
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.feat p {
+  font-size: 13.5px;
+  color: var(--gray-400);
+  line-height: 1.75;
+}
+
+/* ───── CODE DEMO ───── */
+#demo {
+  background: var(--gray-900);
+  border-top: 1px solid var(--gray-700);
+  border-bottom: 1px solid var(--gray-700);
+}
+
+.demo-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--gray-700);
+  border: 1px solid var(--gray-700);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 0;
+}
+
+.demo-pane {
+  background: var(--black);
+}
+
+.demo-pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--gray-700);
+  background: var(--gray-900);
+}
+
+.pane-dots { display: flex; gap: 6px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.d-r { background: #3d3d3d; }
+.d-y { background: #3d3d3d; }
+.d-g { background: #3d3d3d; }
+.pane-active .d-r { background: #ff5f57; }
+.pane-active .d-y { background: #ffbd2e; }
+.pane-active .d-g { background: #28c840; }
+
+.pane-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gray-400);
+  letter-spacing: 0.06em;
+}
+
+.pane-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  letter-spacing: 0.06em;
+}
+
+.badge-ok { background: rgba(74,222,128,0.08); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
+.badge-soon { background: rgba(251,191,36,0.08); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); animation: fadePulse 2s ease-in-out infinite; }
+
+@keyframes fadePulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+.demo-code {
+  padding: 28px 28px;
+  min-height: 320px;
+}
+
+.demo-code pre {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.9;
+  color: var(--gray-300);
+  white-space: pre-wrap;
+}
+
+/* coming soon pane */
+.coming-soon-pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  padding: 40px;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.coming-soon-pane::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 20px,
+    rgba(255,255,255,0.012) 20px,
+    rgba(255,255,255,0.012) 40px
+  );
+}
+
+.cs-icon {
+  width: 48px; height: 48px;
+  border: 1px solid var(--gray-600);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-900);
+  position: relative;
+  z-index: 1;
+}
+
+.cs-icon svg {
+  width: 22px; height: 22px;
+  stroke: var(--gray-400);
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cs-title {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--white);
+  letter-spacing: 0.04em;
+  position: relative;
+  z-index: 1;
+}
+
+.cs-sub {
+  font-size: 13px;
+  color: var(--gray-400);
+  text-align: center;
+  line-height: 1.6;
+  max-width: 260px;
+  position: relative;
+  z-index: 1;
+}
+
+.cs-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #fbbf24;
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.2);
+  padding: 5px 14px;
+  border-radius: 100px;
+  letter-spacing: 0.1em;
+  position: relative;
+  z-index: 1;
+}
+
+.cs-line {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(251,191,36,0.3), transparent);
+}
+
+/* token colors */
+.t-kw { color: #a78bfa; }
+.t-fn { color: #93c5fd; }
+.t-str { color: #86efac; }
+.t-num { color: #fbbf24; }
+.t-cm { color: #383838; font-style: italic; }
+
+/* ───── HOW IT WORKS ───── */
+#how { border-top: 1px solid var(--gray-700); }
+
+.how-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+}
+
+.how-left { position: sticky; top: 100px; }
+
+.how-visual {
+  border: 1px solid var(--gray-700);
+  border-radius: 12px;
+  padding: 48px 40px;
+  background: var(--gray-900);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.how-visual::before {
+  content: '';
+  position: absolute;
+  top: -60px; left: 50%;
+  transform: translateX(-50%);
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(255,255,255,0.04), transparent 70%);
+}
+
+.how-visual-icon {
+  width: 64px; height: 64px;
+  border: 1px solid var(--gray-600);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-800);
+  margin-bottom: 8px;
+}
+
+.how-visual-icon svg {
+  width: 28px; height: 28px;
+  stroke: var(--gray-200);
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.how-visual-title {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--white);
+  letter-spacing: 0.04em;
+}
+
+.how-visual-sub {
+  font-size: 13px;
+  color: var(--gray-400);
+  max-width: 220px;
+  line-height: 1.6;
+}
+
+.steps { display: flex; flex-direction: column; }
+
+.step {
+  display: flex;
+  gap: 28px;
+  padding: 32px 0;
+  border-bottom: 1px solid var(--gray-700);
+  align-items: flex-start;
+  cursor: default;
+}
+
+.step:first-child { padding-top: 0; }
+.step:last-child { border-bottom: none; }
+
+.step-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gray-600);
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+  padding-top: 3px;
+  width: 28px;
+}
+
+.step h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--white);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.step p {
+  font-size: 13.5px;
+  color: var(--gray-400);
+  line-height: 1.7;
+}
+
+/* ───── TESTIMONIAL / QUOTE ───── */
+.quote-section {
+  border-top: 1px solid var(--gray-700);
+  border-bottom: 1px solid var(--gray-700);
+  background: var(--gray-900);
+  padding: 80px 64px;
+  text-align: center;
+}
+
+.quote-mark {
+  font-family: var(--font-mono);
+  font-size: 64px;
+  color: var(--gray-700);
+  line-height: 0.8;
+  margin-bottom: 32px;
+  display: block;
+}
+
+.quote-text {
+  font-size: clamp(18px, 3vw, 26px);
+  font-weight: 300;
+  color: var(--white);
+  line-height: 1.5;
+  max-width: 640px;
+  margin: 0 auto 24px;
+  letter-spacing: -0.01em;
+}
+
+.quote-text strong { font-weight: 600; }
+
+.quote-attr {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gray-400);
+  letter-spacing: 0.1em;
+}
+
+/* ───── CTA ───── */
+.cta-section {
+  padding: 160px 48px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-section::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px; height: 500px;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.04) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.cta-grid-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 30%, transparent 80%);
+}
+
+.cta-inner { position: relative; z-index: 2; }
+
+.cta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--gray-600);
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--gray-300);
+  letter-spacing: 0.1em;
+  margin-bottom: 40px;
+}
+
+.cta-section h2 {
+  font-family: var(--font-mono);
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 20px;
+}
+
+.cta-section p {
+  font-size: 16px;
+  color: var(--gray-400);
+  margin-bottom: 48px;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.cta-discord {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--white);
+  color: var(--black);
+  padding: 16px 32px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.cta-discord:hover { background: var(--off-white); transform: translateY(-3px); }
+
+.cta-note {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--gray-500);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+/* ───── FOOTER ───── */
+footer {
+  border-top: 1px solid var(--gray-700);
+  padding: 32px 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer-l {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-l img {
+  width: 20px; height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+  opacity: 0.6;
+}
+
+.footer-l span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gray-500);
+}
+
+.footer-r {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.footer-r a {
+  font-size: 12px;
+  color: var(--gray-500);
+  text-decoration: none;
+  transition: color 0.2s;
+  letter-spacing: 0.02em;
+}
+
+.footer-r a:hover { color: var(--gray-200); }
+
+/* ───── DISCORD SVG ───── */
+.dc {
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ───── RESPONSIVE ───── */
+@media (max-width: 900px) {
+  nav { padding: 0 20px; }
+  .nav-center { display: none; }
+  .section-wrap { padding: 80px 24px; }
+  .feat-grid { grid-template-columns: 1fr; }
+  .demo-layout { grid-template-columns: 1fr; }
+  .how-layout { grid-template-columns: 1fr; }
+  .how-left { position: static; }
+  .stats { grid-template-columns: 1fr; }
+  .stat { border-right: none; border-bottom: 1px solid var(--gray-700); }
+  .stat:last-child { border-bottom: none; }
+  footer { flex-direction: column; gap: 16px; padding: 24px; }
+  .quote-section { padding: 60px 24px; }
+  .cta-section { padding: 100px 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <img src="https://i.imgur.com/GMWPNdc.png" alt="Sakryn" onerror="this.style.display='none'">
+    <span class="nav-logo-text">SAKRYN</span>
+  </a>
+  <div class="nav-center">
+    <a href="#features">Features</a>
+    <a href="#demo">Demo</a>
+    <a href="#how">How it works</a>
+  </div>
+  <div class="nav-right">
+    <a href="https://discord.gg/546SvRJBBN" target="_blank" rel="noopener" class="nav-pill">
+      <svg class="dc" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.003.028.018.056.04.073a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+      discord
+    </a>
+    <a href="https://discord.gg/546SvRJBBN" target="_blank" rel="noopener" class="nav-cta">
+      Get started
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      ROBLOX LUA SCRIPT PROTECTION
+    </div>
+    <div class="hero-logo-wrap">
+      <img src="https://i.imgur.com/GMWPNdc.png" alt="Sakryn Obfuscator" class="hero-logo" onerror="this.style.display='none'">
+    </div>
+    <h1>SAKRYN</h1>
+    <p class="hero-h1-sub">OBFUSCATOR</p>
+    <p class="hero-desc">Advanced Lua obfuscation built for Roblox. Your scripts become unreadable — while running exactly as intended.</p>
+    <div class="hero-actions">
+      <a href="https://discord.gg/546SvRJBBN" target="_blank" rel="noopener" class="btn-white">
+        <svg class="dc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.003.028.018.056.04.073a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+        Join Discord
+      </a>
+      <a href="#features" class="btn-ghost">Explore features</a>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <div class="scroll-mouse"><div class="scroll-wheel"></div></div>
+  </div>
+  <div class="hero-bottom"></div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-strip">
+  <div class="marquee-track" id="mtrack"></div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-n">100%</div>
+    <div class="stat-label">Lua compatible</div>
+  </div>
+  <div class="stat">
+    <div class="stat-n">0ms</div>
+    <div class="stat-label">Runtime overhead</div>
+  </div>
+  <div class="stat">
+    <div class="stat-n">∞</div>
+    <div class="stat-label">Obfuscation layers</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-wrap">
+    <div class="eyebrow">PROTECTION LAYERS</div>
+    <h2 class="section-h">Every layer makes it <em>harder to crack.</em></h2>
+
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="feat-num">01</div>
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h3>Variable renaming</h3>
+        <p>Every variable, function, and parameter is renamed to unreadable random identifiers. Reverse engineering the logic becomes near-impossible.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-num">02</div>
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+        <h3>String encryption</h3>
+        <p>All string literals are encrypted at compile time and decrypted only at runtime — invisible to anyone reading the source.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-num">03</div>
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        <h3>Control flow flattening</h3>
+        <p>The logical structure of your program is rearranged into unrecognizable patterns — same output, completely unreadable path.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-num">04</div>
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></div>
+        <h3>Constant folding</h3>
+        <p>Numbers and values are replaced with complex mathematical expressions that evaluate identically — hiding your actual constants.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-num">05</div>
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>Anti-deobfuscation</h3>
+        <p>Specific layers target and defeat common deobfuscation tools and techniques actively used in the Roblox community.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-num">06</div>
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+        <h3>Dead code injection</h3>
+        <p>Realistic-looking but non-functional code is woven throughout your script to confuse and mislead any reader.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section id="demo">
+  <div class="section-wrap">
+    <div class="eyebrow">CODE PREVIEW</div>
+    <h2 class="section-h">Before and after <em>obfuscation.</em></h2>
+
+    <div class="demo-layout">
+      <!-- BEFORE -->
+      <div class="demo-pane pane-active">
+        <div class="demo-pane-header">
+          <div class="pane-dots"><span class="dot d-r"></span><span class="dot d-y"></span><span class="dot d-g"></span></div>
+          <span class="pane-label">script.lua</span>
+          <span class="pane-badge badge-ok">READABLE</span>
+        </div>
+        <div class="demo-code">
+          <pre><span class="t-cm">-- Simple Roblox player script</span>
+<span class="t-kw">local</span> <span class="t-fn">Players</span> = game:GetService(<span class="t-str">"Players"</span>)
+<span class="t-kw">local</span> playerData = {}
+
+<span class="t-kw">local function</span> <span class="t-fn">onPlayerAdded</span>(player)
+    playerData[player.Name] = {
+        coins  = <span class="t-num">0</span>,
+        level  = <span class="t-num">1</span>,
+        joined = os.time()
+    }
+    <span class="t-fn">print</span>(<span class="t-str">"Player joined: "</span>
+        .. player.Name)
+<span class="t-kw">end</span>
+
+Players.PlayerAdded
+    :<span class="t-fn">Connect</span>(onPlayerAdded)</pre>
+        </div>
+      </div>
+
+      <!-- AFTER — COMING SOON -->
+      <div class="demo-pane">
+        <div class="demo-pane-header">
+          <div class="pane-dots"><span class="dot d-r"></span><span class="dot d-y"></span><span class="dot d-g"></span></div>
+          <span class="pane-label">script_obfuscated.lua</span>
+          <span class="pane-badge badge-soon">COMING SOON</span>
+        </div>
+        <div class="coming-soon-pane">
+          <div class="cs-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="cs-title">Not released yet</div>
+          <div class="cs-sub">The obfuscated output preview is under development and will be available very soon.</div>
+          <div class="cs-tag">IN DEVELOPMENT</div>
+          <div class="cs-line"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUOTE -->
+<div class="quote-section">
+  <span class="quote-mark">"</span>
+  <p class="quote-text">Your code should run everywhere. <strong>Be readable nowhere.</strong></p>
+  <span class="quote-attr">— SAKRYN OBFUSCATOR</span>
+</div>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-wrap">
+    <div class="how-layout">
+      <div class="how-left">
+        <div class="eyebrow">THE PROCESS</div>
+        <h2 class="section-h" style="margin-bottom:32px">Simple to use.<br><em>Impossible to crack.</em></h2>
+        <div class="how-visual">
+          <div class="how-visual-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div class="how-visual-title">SAKRYN</div>
+          <div class="how-visual-sub">Join our Discord to get started — free and instant.</div>
+          <a href="https://discord.gg/546SvRJBBN" target="_blank" rel="noopener" class="btn-white" style="font-size:13px; padding:10px 22px; margin-top:8px;">
+            <svg class="dc" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.003.028.018.056.04.073a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+            discord.gg/sakryn
+          </a>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">01</span>
+          <div>
+            <h3>Join our Discord server</h3>
+            <p>Everything runs through Discord. Join, get access, and meet other users in the community.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">02</span>
+          <div>
+            <h3>Paste your Lua script</h3>
+            <p>Upload your Roblox Lua script directly in the bot channel. All standard Roblox APIs and services are supported.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">03</span>
+          <div>
+            <h3>Choose protection level</h3>
+            <p>Pick how many obfuscation layers to apply. More layers means stronger protection — and higher complexity output.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">04</span>
+          <div>
+            <h3>Receive your protected script</h3>
+            <p>Get your obfuscated script back instantly. It runs identically to the original — only now, no one else can read it.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-grid-bg"></div>
+  <div class="cta-inner">
+    <div class="cta-tag">
+      <span class="badge-dot"></span>
+      FREE TO JOIN
+    </div>
+    <h2>Protect your scripts<br>starting today.</h2>
+    <p>Join hundreds of Roblox developers keeping their code safe with Sakryn.</p>
+    <a href="https://discord.gg/546SvRJBBN" target="_blank" rel="noopener" class="cta-discord">
+      <svg class="dc" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.003.028.018.056.04.073a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+      Join Discord — it's free
+    </a>
+    <div class="cta-note">discord.gg/546SvRJBBN</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-l">
+    <img src="https://i.imgur.com/GMWPNdc.png" alt="Sakryn" onerror="this.style.display='none'">
+    <span>Sakryn Obfuscator &copy; 2025</span>
+  </div>
+  <div class="footer-r">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="https://discord.gg/546SvRJBBN" target="_blank" rel="noopener">Discord</a>
+  </div>
+</footer>
+
+<script>
+const items = [
+  'VARIABLE RENAMING','STRING ENCRYPTION','CONTROL FLOW FLATTENING',
+  'CONSTANT FOLDING','DEAD CODE INJECTION','ANTI-DEOBFUSCATION',
+  'ROBLOX COMPATIBLE','ZERO OVERHEAD','INSTANT OUTPUT'
+];
+const track = document.getElementById('mtrack');
+const full = [...items, ...items, ...items, ...items];
+track.innerHTML = full.map(t =>
+  `<span class="marquee-item"><span>${t}</span><span class="marquee-sep"></span></span>`
+).join('');
+</script>
+</body>
+</html>
